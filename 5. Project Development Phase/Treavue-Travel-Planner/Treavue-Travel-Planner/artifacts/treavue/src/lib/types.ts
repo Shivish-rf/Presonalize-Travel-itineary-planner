@@ -1,0 +1,7 @@
+export type Activity = { id: string; title: string; description: string; location: string; time: string; durationMinutes: number; category: string; cost: number; currency: string; notes: string; fixed: boolean };
+export type Day = { id: string; date: string; activities: Activity[] };
+export type Destination = { id: string; name: string; country: string; region: string; description: string; image: string; interests: string[]; suggestedDays: number; budgetPerDayINR: number; attractions: string[]; cuisine: string; tips: string };
+export type Trip = { id: string; title: string; destinationId: string; stops: string[]; startDate: string; endDate: string; travelerType: string; travelerCount: number; budget: number; currency: string; interests: string[]; pace: string; transport: string; accommodation: string; dietaryNeeds: string; accessibilityNeeds: string; mustVisit: string[]; excludedActivities: string[]; instructions: string; status: 'draft' | 'upcoming' | 'past'; days: Day[]; notes: string; createdAt: string };
+export type SavedPlace = { id: string; name: string; type: string; destinationId: string; category: string; description: string; image: string; cost: number };
+export type Profile = { name: string; email: string; home: string; currency: string; travelStyle: string; interests: string[] };
+export type Store = { version: 1; destinations: Destination[]; trips: Trip[]; saved: SavedPlace[]; favorites: string[]; profile: Profile };

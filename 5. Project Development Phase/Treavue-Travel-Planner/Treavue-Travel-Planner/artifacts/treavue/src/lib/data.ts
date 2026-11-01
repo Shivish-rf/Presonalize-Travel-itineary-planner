@@ -1,0 +1,31 @@
+import type { Destination, Store, Trip, Day, Activity } from './types';
+
+export let destinations: Destination[] = [
+ {id:'kyoto',name:'Kyoto',country:'Japan',region:'East Asia',description:'A city of quiet temple paths, cedar-scented hillsides and intimate neighborhood kitchens. Kyoto rewards a slower pace and an early start.',image:'/images/kyoto.jpg',interests:['Culture','Food','Nature','History'],suggestedDays:5,budgetPerDayINR:9800,attractions:['Fushimi Inari Shrine','Arashiyama Bamboo Grove','Nishiki Market','Kiyomizu-dera'],cuisine:'Obanzai, yudofu and matcha sweets',tips:'Visit the popular shrines before 8am; keep cash for small neighborhood restaurants.'},
+ {id:'lisbon',name:'Lisbon',country:'Portugal',region:'Southern Europe',description:'Sunlit tiled streets, Atlantic air and late dinners. Lisbon is best explored on foot, with time left over for a long coffee.',image:'/images/lisbon.jpg',interests:['Food','Architecture','Culture','Coast'],suggestedDays:4,budgetPerDayINR:8500,attractions:['Alfama','Belém Tower','LX Factory','Miradouro da Senhora do Monte'],cuisine:'Pastéis de nata, grilled sardines and petiscos',tips:'Wear shoes with grip on the calçada; trams are useful but get crowded.'},
+ {id:'jaipur',name:'Jaipur',country:'India',region:'South Asia',description:'Rose-colored facades, intricate courtyards and a lively craft culture make the Pink City a feast for curious wanderers.',image:'/images/jaipur.jpg',interests:['Culture','History','Shopping','Food'],suggestedDays:3,budgetPerDayINR:6200,attractions:['Amber Fort','Hawa Mahal','City Palace','Bapu Bazaar'],cuisine:'Dal baati churma, laal maas and ghewar',tips:'Start at Amber Fort early, and agree on fares before taking an auto-rickshaw.'},
+ {id:'bali',name:'Ubud',country:'Indonesia',region:'Southeast Asia',description:'A green, inland pause among rice terraces, small art studios and restorative cafés. Let the days unfold around the light.',image:'/images/bali.jpg',interests:['Nature','Wellness','Food','Culture'],suggestedDays:5,budgetPerDayINR:7200,attractions:['Tegallalang Rice Terraces','Campuhan Ridge Walk','Ubud Art Market','Goa Gajah'],cuisine:'Nasi campur, satay lilit and fresh tropical fruit',tips:'A light rain jacket helps; hire a local driver for a full day of outlying sights.'},
+ {id:'istanbul',name:'Istanbul',country:'Türkiye',region:'West Asia',description:'Where ferry horns cross the Bosphorus and every neighborhood tells a different story in food, architecture and everyday life.',image:'/images/istanbul.jpg',interests:['History','Food','Architecture','Culture'],suggestedDays:4,budgetPerDayINR:8900,attractions:['Hagia Sophia','Spice Bazaar','Kadıköy','Galata Tower'],cuisine:'Meze, simit and slow-cooked lamb',tips:'Use an Istanbulkart for transit and leave room for an unplanned ferry ride.'},
+ {id:'marrakech',name:'Marrakech',country:'Morocco',region:'North Africa',description:'A sensory city of courtyards, gardens and craft workshops. Step away from the busiest lanes to find its quieter rhythm.',image:'/images/marrakech.jpg',interests:['Culture','Shopping','Food','History'],suggestedDays:4,budgetPerDayINR:7600,attractions:['Jardin Majorelle','Bahia Palace','Medina souks','Ben Youssef Madrasa'],cuisine:'Tajine, harira and orange blossom pastries',tips:'Ask before photographing people, and use a map pin to find your riad.'}
+];
+export function replaceDestinations(updated: Destination[]): void {
+ destinations = updated;
+}
+const activity = (id:string,title:string,time:string,category:string,cost:number,location:string,duration=90):Activity=>({id,title,time,category,cost,location,durationMinutes:duration,currency:'INR',description:`A considered stop for ${title.toLowerCase()}.`,notes:'',fixed:false});
+export function sampleDays(destinationId:string,startDate:string):Day[] {
+ const d=destinations.find(x=>x.id===destinationId)??destinations[0];
+ const templates: [string,string,string,number,string][] = d.id==='kyoto'
+ ? [['Fushimi Inari at first light','07:30','Temple',0,'Fushimi-ku'],['Lunch at Nishiki Market','12:15','Food',1200,'Nishiki Market'],['Gion lanes at dusk','16:30','Walk',0,'Gion']]
+ : d.id==='lisbon' ? [['Alfama morning wander','09:00','Walk',0,'Alfama'],['Lunch of petiscos','12:30','Food',1800,'Graça'],['Sunset at the miradouro','18:00','Viewpoint',0,'São Vicente']]
+ : [['A slow start in the old quarter','09:00','Culture',0,d.name],['A local lunch stop','12:30','Food',1500,d.name],['An afternoon landmark','15:30','Sightseeing',500,d.name]];
+ const date=new Date(`${startDate||new Date().toISOString().slice(0,10)}T12:00:00`);
+ return Array.from({length:3},(_,i)=>{const dt=new Date(date);dt.setDate(dt.getDate()+i);return {id:`day-${i+1}`,date:dt.toISOString().slice(0,10),activities:templates.map((t,j)=>activity(`${i}-${j}`,...t))};});
+}
+export function seedStore():Store {
+ const days=sampleDays('kyoto','2026-10-08');
+ const trip:Trip={id:'trip-kyoto',title:'Autumn in Kyoto',destinationId:'kyoto',stops:['kyoto'],startDate:'2026-10-08',endDate:'2026-10-12',travelerType:'Couple',travelerCount:2,budget:185000,currency:'INR',interests:['Culture','Food'],pace:'Balanced',transport:'Public transit',accommodation:'Small hotel or ryokan',dietaryNeeds:'',accessibilityNeeds:'',mustVisit:['Fushimi Inari Shrine'],excludedActivities:[],instructions:'Leave space for tea and unplanned walks.',status:'upcoming',days,notes:'Reserve a quiet evening for a neighborhood dinner.',createdAt:'2026-06-01'};
+ return {version:1,destinations,trips:[trip],saved:[
+ {id:'save-1',name:'Arashiyama Bamboo Grove',type:'Attraction',destinationId:'kyoto',category:'Nature',description:'A striking morning walk through towering bamboo.',image:destinations[0].image,cost:0},
+ {id:'save-2',name:'Pastéis de Belém',type:'Restaurant',destinationId:'lisbon',category:'Food',description:'A beloved bakery for warm custard tarts.',image:destinations[1].image,cost:900},
+ {id:'save-3',name:'Campuhan Ridge Walk',type:'Activity',destinationId:'bali',category:'Outdoors',description:'A gentle trail above Ubud’s green valleys.',image:destinations[3].image,cost:0}],favorites:['kyoto','lisbon'],profile:{name:'Alex Morgan',email:'alex@example.com',home:'London',currency:'INR',travelStyle:'Thoughtful and unhurried',interests:['Food','Culture','Nature']}};
+}

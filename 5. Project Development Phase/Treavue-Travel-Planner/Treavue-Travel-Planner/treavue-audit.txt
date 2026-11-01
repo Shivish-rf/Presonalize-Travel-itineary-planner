@@ -1,0 +1,21 @@
+﻿
+
+Path       : C:\Users\Sanjay Kumar\Download
+             s\Treavue-Travel-Planner\Treav
+             ue-Travel-Planner\lib\db\src\s
+             chema\index.ts
+LineNumber : 7
+Line       : //   import { pgTable, text, 
+             serial } from 
+             "drizzle-orm/pg-core";
+
+Path       : C:\Users\Sanjay Kumar\Download
+             s\Treavue-Travel-Planner\Treav
+             ue-Travel-Planner\lib\db\src\s
+             chema\index.ts
+LineNumber : 11
+Line       : //   export const postsTable 
+             = pgTable("posts", {
+
+
+
