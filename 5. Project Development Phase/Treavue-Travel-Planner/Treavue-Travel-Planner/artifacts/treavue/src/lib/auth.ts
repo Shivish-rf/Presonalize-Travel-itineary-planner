@@ -13,6 +13,8 @@ export type AuthSession = {
 const AUTH_STORAGE_KEY = 'treavue-auth-session-v1';
 const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL || '').replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+
 let currentSession: AuthSession | null = null;
 const refreshInFlight = new Map<string, Promise<AuthSession>>();
 const listeners = new Set<(session: AuthSession | null) => void>();
@@ -147,11 +149,30 @@ export function subscribeToAuth(
   return () => listeners.delete(listener);
 }
 
+function makeDemoId(email: string): string {
+  try {
+    return `demo-${btoa(email.toLowerCase()).replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) || 'user'}`;
+  } catch {
+    return `demo-${email.replace(/[^a-zA-Z0-9]/g, '').slice(0, 16) || 'user'}`;
+  }
+}
+
 export async function signUp(
   email: string,
   password: string,
   name = '',
 ): Promise<AuthSession | null> {
+  if (!isSupabaseConfigured) {
+    const id = makeDemoId(email);
+    const session: AuthSession = {
+      access_token: `demo-token-${id}`,
+      refresh_token: `demo-refresh-${id}`,
+      expires_at: Math.floor(Date.now() / 1000) + 86400 * 30,
+      user: { id, email },
+    };
+    publish(session);
+    return session;
+  }
   const payload = await authRequest('signup', {
     email,
     password,
@@ -164,6 +185,17 @@ export async function signUp(
 }
 
 export async function signIn(email: string, password: string): Promise<AuthSession> {
+  if (!isSupabaseConfigured) {
+    const id = makeDemoId(email);
+    const session: AuthSession = {
+      access_token: `demo-token-${id}`,
+      refresh_token: `demo-refresh-${id}`,
+      expires_at: Math.floor(Date.now() / 1000) + 86400 * 30,
+      user: { id, email },
+    };
+    publish(session);
+    return session;
+  }
   const payload = await authRequest('token?grant_type=password', { email, password });
   const session = normalizeSession(payload);
   publish(session);
@@ -196,6 +228,14 @@ export async function refreshAuthSession(
 async function refreshAuthSessionOnce(
   previous: AuthSession,
 ): Promise<AuthSession> {
+  if (!isSupabaseConfigured) {
+    const renewed: AuthSession = {
+      ...previous,
+      expires_at: Math.floor(Date.now() / 1000) + 86400 * 30,
+    };
+    publish(renewed);
+    return renewed;
+  }
   try {
     const payload = await authRequest('token?grant_type=refresh_token', {
       refresh_token: previous.refresh_token,
@@ -224,6 +264,9 @@ export async function getValidAccessToken(
   if (expectedUserId && session.user.id !== expectedUserId) {
     throw new Error('The signed-in account changed. Retry the request.');
   }
+  if (!isSupabaseConfigured) {
+    return session.access_token;
+  }
   if (session.expires_at > Math.floor(Date.now() / 1000) + 30) {
     return session.access_token;
   }
@@ -243,19 +286,23 @@ export async function signOut(expectedUserId?: string): Promise<void> {
   if (expectedUserId && session.user.id !== expectedUserId) return;
 
   publish(null);
-  configured();
-  const response = await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
-    method: 'POST',
-    headers: {
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
-  if (!response.ok && response.status !== 401) {
-    throw new Error(`Supabase could not confirm logout (HTTP ${response.status}).`);
+  if (!isSupabaseConfigured) return;
+  try {
+    await fetch(`${SUPABASE_URL}/auth/v1/logout`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+  } catch {
+    // ignore network errors on logout
   }
 }
 
 export async function sendPasswordReset(email: string): Promise<void> {
+  if (!isSupabaseConfigured) {
+    return;
+  }
   await authRequest('recover', { email });
 }

@@ -1,5 +1,5 @@
 import type { Destination, Trip } from './types';
-import { getValidAccessToken, refreshAuthSession } from './auth';
+import { getValidAccessToken, isSupabaseConfigured, refreshAuthSession } from './auth';
 
 const API_BASE_URL = (
   import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001'
@@ -65,6 +65,16 @@ async function request<T>(
   expectedUserId?: string,
 ): Promise<T> {
   const authenticated = expectedUserId !== undefined;
+  if (authenticated && !isSupabaseConfigured && path.startsWith('/trips')) {
+    if (path === '/trips' && (!init || !init.method || init.method === 'GET')) {
+      return [] as T;
+    }
+    if (init?.method === 'POST' || init?.method === 'PUT') {
+      return (init.body ? JSON.parse(init.body as string) : undefined) as T;
+    }
+    return undefined as T;
+  }
+
   let accessToken = authenticated
     ? await getValidAccessToken(expectedUserId)
     : null;
